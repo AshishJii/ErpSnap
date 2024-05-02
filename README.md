@@ -27,7 +27,7 @@ ErpSnap2 is a widget application that provides a one-click interface to view the
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/ashishjii/erpsnap2.git
+git clone https://github.com/AshishJii/ErpSnap.git
 ```
 2. Install dependencies:
 ```bash
