@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QApplication, QDialog, QLineEdit
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject
+from PyQt6.QtGui import QGuiApplication
 from backend import Backend
 
 class Worker(QObject):
@@ -13,7 +14,7 @@ class Worker(QObject):
     def run(self):
         print(self)
         self.backend.thread = self
-        data = self.backend.handle_button_click() 
+        data = self.backend.get_data()
         self.finished.emit(data)
 
 class MainWindow(QMainWindow):
@@ -23,8 +24,19 @@ class MainWindow(QMainWindow):
         self.mousePressFlag = False
         self.offset = QPoint() # Variable to store offset when dragging
         
-        self.backend = Backend(login_callback=self.prompt_login)
+        self.backend = Backend()
         self.setupUI()
+        self.setupWorkerThread()
+
+    def setupWorkerThread(self):
+        self.thread = QThread()
+        self.worker = Worker(self.backend)
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.updateUIwithData)
+        self.worker.progress.connect(self.updateUIwithprogress)
+        self.worker.finished.connect(self.thread.quit) # quit thread afterwards
 
     def setupUI(self):
         self.setWindowTitle("ErpSnap2")
@@ -61,28 +73,33 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.fetch_button)
         
         self.setCentralWidget(central_widget)
+    
+    #override: called when screen is rendered
+    def showEvent(self, event): 
+        super().showEvent(event)
+        screen_gmtry = QGuiApplication.primaryScreen().geometry()
+        margin = 30
+        x = screen_gmtry.width() - self.width() - margin
+        y = margin
+        self.move(x,y)
 
     def fetch_data(self):
         self.status_label.show()
         self.data_label.hide()
         QApplication.processEvents()
 
-        self.thread = QThread()
-        self.worker = Worker(self.backend)
-        self.worker.moveToThread(self.thread)
+        if not self.backend.credentials_present():
+            print("Credentials not present")
+            self.prompt_login()
 
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.updateUIwithData)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.progress.connect(self.updateUIwithprogress)
+        print("Credentials present")
         self.thread.start()
 
     def updateUIwithprogress(self, data):
         print(data)
         self.status_label.setText(data)
         self.status_label.show()
+        QApplication.processEvents()
 
     def updateUIwithData(self, data):
         print(data)
@@ -91,7 +108,7 @@ class MainWindow(QMainWindow):
         if data is not None:
             self.data_label.setText(str(data))
         else:
-            self.data_label.setText("ERror Occured. Try again:")
+            self.data_label.setText("ERRor Occured. Try again:")
 
     def prompt_login(self):
         dialog = LoginDialog(self)
@@ -99,7 +116,7 @@ class MainWindow(QMainWindow):
             username, password = dialog.get_credentials()
             print("username",username)
             self.backend.save_credentials(username, password)
-            self.fetch_data()
+            print("Credentials have been saved")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:

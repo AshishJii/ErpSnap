@@ -9,6 +9,7 @@ class Backend:
             os.makedirs(app_directory)
 
         self.credentials_file = os.path.join(app_directory, 'credentials.txt')
+        # self.credentials_file = 'credentials.txt' # comment this line when building app 💥💥💥💥
 
         self.username = None
         self.password = None
@@ -29,24 +30,27 @@ class Backend:
             f.write(username + "\n")
             f.write(password)
 
-    def get_credentials(self):
+    def credentials_present(self): #booleanCheck
         self.read_credentials()
         if not self.username or not self.password:
-            self.login_callback()
-        return self.username, self.password
+            return False
+        return True
 
-    def handle_button_click(self):
+    # reads credentials from file, then fetches
+    def get_data(self):
         print("Button clicked!")
         print(self.thread)
+
         try:
-            roll, passwd = self.get_credentials()
-            res = self.get_data(roll, passwd)
+            self.read_credentials()
+            res = self.fetch_information()
             return res
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
     
-    def get_data(self, roll, passwd):
+    # direct HTTP call from class variables
+    def fetch_information(self):
         # slower, with dns resolution
         # login_url = "https://erp.psit.ac.in/Erp/Auth"
         # login_data = {"username": roll, "password": passwd}
@@ -56,7 +60,7 @@ class Backend:
 
         login_url = "https://103.120.30.61/Erp/Auth"
         headers = {'host': 'erp.psit.ac.in'}
-        login_data = {"username": roll, "password": passwd}
+        login_data = {"username": self.username, "password": self.password}
         login_res = req.post(login_url, data=login_data, headers=headers, verify=False)
 
         if login_res.status_code != 200:
