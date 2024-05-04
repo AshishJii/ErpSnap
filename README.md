@@ -1,5 +1,8 @@
 # ErpSnap2
 
+>[!IMPORTANT]
+>Known bug: window is not scrolling.
+
 ErpSnap2 is a widget application that provides a one-click interface to view the latest information from the PSIT ERP. It saves time by directly fetching data from APIs, allowing users to quickly access the information they need.
 
 ## Features
@@ -13,15 +16,18 @@ ErpSnap2 is a widget application that provides a one-click interface to view the
 | Prompt for roll/pass on initial run | ✔️ |
 | Move request call to dedicated worker thread | ✔️ |
 | Provide progress indicators for logging and data retrieval | ✔️ |
+| Start widget on the right side | ✔️ |
+| Retrieve absent days and notices(HTML parsing) | ⏳80% |
 | Implement loading animation |  |
-| Retrieve absent days and notices(HTML parsing) |  |
-| Start widget on the right side |  |
 | Check internet connectivity |  |
 | Show last synced time |  |
 | Auto-sync data on startup if info exists |  |
 | Check if login info is incorrect |  |
 | Add option to exit |  |
 | Add option to re-enter info |  |
+
+>[!NOTE]
+>Consider using `urllib3` instead of `requests` library to reduce third party dependency requirements.
 
 ## Installation
 

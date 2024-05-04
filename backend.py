@@ -1,5 +1,7 @@
 import os
 import requests as req
+from bs4 import BeautifulSoup
+import re
 
 class Backend:
     def __init__(self, login_callback=None):
@@ -51,13 +53,14 @@ class Backend:
     
     # direct HTTP call from class variables
     def fetch_information(self):
+        req.packages.urllib3.disable_warnings()
+
+        # LOGIN-----------------------------------------------------------------------------------
         # slower, with dns resolution
         # login_url = "https://erp.psit.ac.in/Erp/Auth"
         # login_data = {"username": roll, "password": passwd}
         # login_res = req.post(login_url, data=login_data)
         
-        self.thread.progress.emit("Logging in...")
-
         login_url = "https://103.120.30.61/Erp/Auth"
         headers = {'host': 'erp.psit.ac.in'}
         login_data = {"username": self.username, "password": self.password}
@@ -65,12 +68,12 @@ class Backend:
 
         if login_res.status_code != 200:
             print("Login failed!")
-            return None
+            return login_res.status_code
         
-        print('Login Sucesss')
-        self.thread.progress.emit("Fetching Attendance...")
         session_id = login_res.cookies.get("PHPSESSID")
+        print('Login Sucesss')
 
+        # ATTENDENCE------------------------------------------------------------------------------
         # slower, with dns resolution
         # attendance_url = "https://erp.psit.ac.in/Student/MyAttendanceDetail"
         # url_headers = {"Cookie": f"PHPSESSID={session_id}"}
@@ -82,16 +85,69 @@ class Backend:
 
         if attendance_res.status_code != 200:
             print("Failed to fetch attendance data.")
-            return None
+            return attendance_res.status_code
         
         data = attendance_res.text
         total_lecture = extract_info(data, "Total Lecture : [0-9]*")
         total_absent = extract_info(data, "Total Absent : [0-9]*")
         attendance_percentage = extract_info(data, "Attendance Percentage : [0-9.]*\s%")
+        self.thread.progress.emit(['AttenTab',f'{total_lecture}\n{total_absent}\n{attendance_percentage}'])
+        
+        # TIMETABLE-------------------------------------------------------------------------------
+        timetable_url = "https://103.120.30.61/Student/MyTimeTable"
+        url_headers = {'host': 'erp.psit.ac.in',"Cookie": f"PHPSESSID={session_id}"}
+        timetable_res = req.get(timetable_url, headers=url_headers, verify=False)
 
-        return f'{total_lecture}\n{total_absent}\n{attendance_percentage}'
+        if timetable_res.status_code != 200:
+            print("Failed to fetch Timetable data.")
+            return timetable_res.status_code
+
+        soup = BeautifulSoup(timetable_res.text, 'html.parser')
+
+        ttable = soup.select('.danger h5')
+        ttlist = []
+        if not ttable:
+            print('No time table for today')
+            self.thread.progress.emit(['TtTab','No timetable for today'])
+        else:
+            pattern = re.compile(r'\[\s*(.*?)\s*\]')
+            for i in range(8):
+                matches = pattern.findall(ttable[i].get_text())
+                ttlist.append([matches[0],matches[1],matches[2]])
+            
+            print(ttlist)
+            
+            data = ''
+            for tt in ttlist:
+                data += f'{tt[0]}\t{tt[1]}\n'
+            self.thread.progress.emit(['TtTab',data])
+
+        # NOTICES---------------------------------------------------------------------------------
+        # self.thread.progress.emit("Getting latest Notices...")
+        notices_url = "https://103.120.30.61/Student"
+        url_headers = {'host': 'erp.psit.ac.in',"Cookie": f"PHPSESSID={session_id}"}
+        notices_res = req.get(notices_url, headers=url_headers, verify=False)
+
+        if notices_res.status_code != 200:
+            print("Failed to fetch notices data.")
+            return notices_res.status_code
+        
+        soup = BeautifulSoup(notices_res.text,'html.parser')
+        ntcHTML = soup.select('.table2 > tbody tr')
+        notices = []
+        for i in range(5):
+            ntc = ntcHTML[i].find("a")
+            notices.append([ntc.get_text(),ntc['href']])
+
+        print(notices)
+
+        data = ''
+        for notice in notices:
+            data += f'<li><a href="{notice[1]}">{notice[0]}</a><br></li>'
+        self.thread.progress.emit(['NtcTab',data])
+
+        return 'success'
 
 def extract_info(data, pattern):
-    import re
     match = re.search(pattern, data)
     return match.group(0) if match else "Not found"

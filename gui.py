@@ -1,11 +1,11 @@
-from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QApplication, QDialog, QLineEdit
+from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QApplication, QDialog, QLineEdit, QTabWidget
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject
 from PyQt6.QtGui import QGuiApplication
 from backend import Backend
 
 class Worker(QObject):
     finished = pyqtSignal(str)
-    progress = pyqtSignal(str)
+    progress = pyqtSignal(list)
 
     def __init__(self, backend):
         super().__init__()
@@ -14,8 +14,8 @@ class Worker(QObject):
     def run(self):
         print(self)
         self.backend.thread = self
-        data = self.backend.get_data()
-        self.finished.emit(data)
+        status = self.backend.get_data()
+        self.finished.emit(status)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -55,25 +55,56 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         layout = QVBoxLayout()
         central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
 
-        self.title_label = QLabel("ErpSnap v2.0")
+        self.title_label = QLabel("ErpSnap v2.1")
         self.title_label.setStyleSheet("font-size: 18px;font-weight: bold;")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.title_label)
         
         self.status_label = QLabel("Loading...", alignment=Qt.AlignmentFlag.AlignCenter)
         self.status_label.hide()  # Initially hide loading label
-        layout.addWidget(self.status_label)
-        
-        self.data_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.data_label)        
+        layout.addWidget(self.status_label)      
+
+        self.tabs = QTabWidget()
+        self.tabs.setTabPosition(QTabWidget.TabPosition.South)
+        layout.addWidget(self.tabs)
+        tabsStyles = "border: none;padding: 0;"
+
+        tabNames = ['AttenTab','TtTab','NtcTab']
+        for tabNum in range(3):
+            tab = QWidget()
+            tab.setObjectName(tabNames[tabNum])
+            tab.setStyleSheet(tabsStyles)
+            tab_layout = QVBoxLayout()
+            tab.setLayout(tab_layout)
+            tab_label = QLabel()
+            tab_label.setWordWrap(True)
+            tab_label.setOpenExternalLinks(True)
+            tab_layout.addWidget(tab_label)
+            self.tabs.addTab(tab,tabNames[tabNum])
+
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                /*border: none;*/
+            }
+            QTabBar::tab {
+                background-color: rgba(0,0,0,100%);
+                color: rgba(237,174,28,100%);
+            }
+            QTabBar::tab:selected {
+                background-color: rgba(237,174,28,100%);
+                color: rgba(0,0,0,100%);
+            }
+            /*QTabWidget::pane > QWidget {
+                border: none;
+            }*/
+            """)
         
         self.fetch_button = QPushButton("Refresh")
         self.fetch_button.clicked.connect(self.fetch_data)
         layout.addWidget(self.fetch_button)
-        
-        self.setCentralWidget(central_widget)
-    
+
     #override: called when screen is rendered
     def showEvent(self, event): 
         super().showEvent(event)
@@ -85,7 +116,6 @@ class MainWindow(QMainWindow):
 
     def fetch_data(self):
         self.status_label.show()
-        self.data_label.hide()
         QApplication.processEvents()
 
         if not self.backend.credentials_present():
@@ -97,18 +127,15 @@ class MainWindow(QMainWindow):
 
     def updateUIwithprogress(self, data):
         print(data)
-        self.status_label.setText(data)
-        self.status_label.show()
+        self.findChild(QWidget,data[0]).findChild(QLabel).setText(data[1])
         QApplication.processEvents()
 
-    def updateUIwithData(self, data):
-        print(data)
-        self.status_label.hide()
-        self.data_label.show()
-        if data is not None:
-            self.data_label.setText(str(data))
+    def updateUIwithData(self, response):
+        print(response)
+        if response =='success':
+            self.status_label.hide()
         else:
-            self.data_label.setText("ERRor Occured. Try again:")
+            self.status_label.setText(response)
 
     def prompt_login(self):
         dialog = LoginDialog(self)
