@@ -54,56 +54,39 @@ class Backend:
     # direct HTTP call from class variables
     def fetch_information(self):
         req.packages.urllib3.disable_warnings()
-
-        # LOGIN-----------------------------------------------------------------------------------
-        # slower, with dns resolution
-        # login_url = "https://erp.psit.ac.in/Erp/Auth"
-        # login_data = {"username": roll, "password": passwd}
-        # login_res = req.post(login_url, data=login_data)
-        
         login_url = "https://103.120.30.61/Erp/Auth"
-        headers = {'host': 'erp.psit.ac.in'}
+        attendance_url = "https://103.120.30.61/Student/MyAttendanceDetail"
+        timetable_url = "https://103.120.30.61/Student/MyTimeTable"
+        notices_url = "https://103.120.30.61/Student"
+        headers = {'host': 'erp.psit.ac.in', 'Cookie': ''}
         login_data = {"username": self.username, "password": self.password}
-        login_res = req.post(login_url, data=login_data, headers=headers, verify=False)
 
-        if login_res.status_code != 200:
-            print("Login failed!")
-            return login_res.status_code
+        # LOGIN-----------------------------------------------------------------------------------  
+        login_res = make_request('post',login_url, headers=headers, data=login_data)
+        if login_res['status'] == 'error':
+            return f'Error: {login_res["msg"]}'
         
-        session_id = login_res.cookies.get("PHPSESSID")
+        session_id = login_res['data'].cookies.get("PHPSESSID")
+        headers["Cookie"] = f"PHPSESSID={session_id}"
         print('Login Sucesss')
 
         # ATTENDENCE------------------------------------------------------------------------------
-        # slower, with dns resolution
-        # attendance_url = "https://erp.psit.ac.in/Student/MyAttendanceDetail"
-        # url_headers = {"Cookie": f"PHPSESSID={session_id}"}
-        # attendance_res = req.get(attendance_url, headers=url_headers)
-
-        attendance_url = "https://103.120.30.61/Student/MyAttendanceDetail"
-        url_headers = {'host': 'erp.psit.ac.in',"Cookie": f"PHPSESSID={session_id}"}
-        attendance_res = req.get(attendance_url, headers=url_headers, verify=False)
-
-        if attendance_res.status_code != 200:
-            print("Failed to fetch attendance data.")
-            return attendance_res.status_code
+        attendance_res = make_request('get', attendance_url, headers=headers)
+        if attendance_res['status'] == 'error':
+            return f'Error: {attendance_res["msg"]}'
         
-        data = attendance_res.text
+        data = attendance_res['data'].text
         total_lecture = extract_info(data, "Total Lecture : [0-9]*")
         total_absent = extract_info(data, "Total Absent : [0-9]*")
         attendance_percentage = extract_info(data, "Attendance Percentage : [0-9.]*\s%")
         self.thread.progress.emit(['AttenTab',f'{total_lecture}\n{total_absent}\n{attendance_percentage}'])
         
         # TIMETABLE-------------------------------------------------------------------------------
-        timetable_url = "https://103.120.30.61/Student/MyTimeTable"
-        url_headers = {'host': 'erp.psit.ac.in',"Cookie": f"PHPSESSID={session_id}"}
-        timetable_res = req.get(timetable_url, headers=url_headers, verify=False)
+        timetable_res = make_request('get', timetable_url, headers=headers)
+        if timetable_res['status'] == 'error':
+            return f'Error: {timetable_res["msg"]}'
 
-        if timetable_res.status_code != 200:
-            print("Failed to fetch Timetable data.")
-            return timetable_res.status_code
-
-        soup = BeautifulSoup(timetable_res.text, 'html.parser')
-
+        soup = BeautifulSoup(timetable_res['data'].text, 'html.parser')
         ttable = soup.select('.danger h5')
         ttlist = []
         if not ttable:
@@ -116,23 +99,17 @@ class Backend:
                 ttlist.append([matches[0],matches[1],matches[2]])
             
             print(ttlist)
-            
             data = ''
             for tt in ttlist:
                 data += f'{tt[0]}\t{tt[1]}\n'
             self.thread.progress.emit(['TtTab',data])
 
         # NOTICES---------------------------------------------------------------------------------
-        # self.thread.progress.emit("Getting latest Notices...")
-        notices_url = "https://103.120.30.61/Student"
-        url_headers = {'host': 'erp.psit.ac.in',"Cookie": f"PHPSESSID={session_id}"}
-        notices_res = req.get(notices_url, headers=url_headers, verify=False)
-
-        if notices_res.status_code != 200:
-            print("Failed to fetch notices data.")
-            return notices_res.status_code
+        notices_res = make_request('get', notices_url, headers=headers)
+        if notices_res['status'] == 'error':
+            return f'Error: {notices_res["msg"]}'
         
-        soup = BeautifulSoup(notices_res.text,'html.parser')
+        soup = BeautifulSoup(notices_res['data'].text,'html.parser')
         ntcHTML = soup.select('.table2 > tbody tr')
         notices = []
         for i in range(5):
@@ -140,13 +117,25 @@ class Backend:
             notices.append([ntc.get_text(),ntc['href']])
 
         print(notices)
-
         data = ''
         for notice in notices:
             data += f'<li><a href="{notice[1]}">{notice[0]}</a><br></li>'
         self.thread.progress.emit(['NtcTab',data])
 
         return 'success'
+    
+
+def make_request(method,url, **kwargs):
+    try: 
+        res = req.request(method, url, verify=False, timeout=5, **kwargs)
+        if res.status_code == 200:
+            return {'status': 'success','data':res}
+        else:
+            return {'status': 'error','msg':f'HTTPError: {res.status_code}'}
+    except req.ConnectionError:
+        return {'status': 'error','msg':'No Internet Connection'}
+    except req.Timeout:
+        return {'status': 'error','msg':'Request timed out. Slow internet connection'}
 
 def extract_info(data, pattern):
     match = re.search(pattern, data)

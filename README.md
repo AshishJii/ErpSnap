@@ -18,8 +18,8 @@ ErpSnap2 is a widget application that provides a one-click interface to view the
 | Provide progress indicators for logging and data retrieval | ✔️ |
 | Start widget on the right side | ✔️ |
 | Retrieve absent days and notices(HTML parsing) | ⏳80% |
+| Check internet connectivity/slow internet | ✔️ |
 | Implement loading animation |  |
-| Check internet connectivity |  |
 | Show last synced time |  |
 | Auto-sync data on startup if info exists |  |
 | Check if login info is incorrect |  |

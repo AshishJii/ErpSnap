@@ -62,7 +62,7 @@ class MainWindow(QMainWindow):
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.title_label)
         
-        self.status_label = QLabel("Loading...", alignment=Qt.AlignmentFlag.AlignCenter)
+        self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
         self.status_label.hide()  # Initially hide loading label
         layout.addWidget(self.status_label)      
 
@@ -115,6 +115,7 @@ class MainWindow(QMainWindow):
         self.move(x,y)
 
     def fetch_data(self):
+        self.status_label.setText('Loading...')
         self.status_label.show()
         QApplication.processEvents()
 
