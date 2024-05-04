@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QApplication, QDialog, QLineEdit, QTabWidget
-from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize
+from PyQt6.QtGui import QGuiApplication, QMovie
+
 from backend import Backend
 
 class Worker(QObject):
@@ -25,6 +26,7 @@ class MainWindow(QMainWindow):
         self.offset = QPoint() # Variable to store offset when dragging
         
         self.backend = Backend()
+        self.loadingGIF = QMovie('loading.gif')
         self.setupUI()
         self.setupWorkerThread()
 
@@ -115,7 +117,9 @@ class MainWindow(QMainWindow):
         self.move(x,y)
 
     def fetch_data(self):
-        self.status_label.setText('Loading...')
+        self.status_label.setMovie(self.loadingGIF)
+        self.loadingGIF.setScaledSize(QSize(40,17))
+        self.loadingGIF.start()
         self.status_label.show()
         QApplication.processEvents()
 
@@ -134,6 +138,7 @@ class MainWindow(QMainWindow):
     def updateUIwithData(self, response):
         print(response)
         if response =='success':
+            self.loadingGIF.stop()
             self.status_label.hide()
         else:
             self.status_label.setText(response)
