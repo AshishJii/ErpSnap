@@ -21,7 +21,7 @@ ErpSnap2 is a widget application that provides a one-click interface to view the
 | Check internet connectivity/slow internet | ✔️ |
 | Implement loading animation | ✔️ |
 | Show last synced time |  |
-| Auto-sync data on startup if info exists |  |
+| Auto-sync data on startup if info exists | ✔️ |
 | Check if login info is incorrect |  |
 | Add option to exit |  |
 | Add option to re-enter info |  |
@@ -42,6 +42,10 @@ pip install -r requirements.txt
 3. Run the application:
 ```bash
 python main.py
+```
+4. Convert to exe file:
+```bash
+pyinstaller --onefile --windowed --add-data "loading.gif:." main.py
 ```
 
 ## Usage

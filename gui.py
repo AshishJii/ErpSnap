@@ -1,6 +1,8 @@
-from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QApplication, QDialog, QLineEdit, QTabWidget
+from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QDialog, QLineEdit, QTabWidget
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize
 from PyQt6.QtGui import QGuiApplication, QMovie
+import sys
+import os
 
 from backend import Backend
 
@@ -21,14 +23,23 @@ class Worker(QObject):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        
+
         self.mousePressFlag = False
         self.offset = QPoint() # Variable to store offset when dragging
         
         self.backend = Backend()
-        self.loadingGIF = QMovie('loading.gif')
+
+        # loading gif setup
+        BASE_DIR = getattr(sys, '_MEIPASS', os.getcwd())
+        loadingIcon = os.path.join(BASE_DIR, 'loading.gif')
+        self.loadingGIF = QMovie(loadingIcon)
+
         self.setupUI()
         self.setupWorkerThread()
+
+        # on startup launch
+        if self.backend.credentials_present():
+            self.fetchInformation()
 
     def setupWorkerThread(self):
         self.thread = QThread()
@@ -59,7 +70,7 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
-        self.title_label = QLabel("ErpSnap v2.1")
+        self.title_label = QLabel("ErpSnap v2.2")
         self.title_label.setStyleSheet("font-size: 18px;font-weight: bold;")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.title_label)
@@ -104,7 +115,7 @@ class MainWindow(QMainWindow):
             """)
         
         self.fetch_button = QPushButton("Refresh")
-        self.fetch_button.clicked.connect(self.fetch_data)
+        self.fetch_button.clicked.connect(self.get_data)
         layout.addWidget(self.fetch_button)
 
     #override: called when screen is rendered
@@ -116,24 +127,25 @@ class MainWindow(QMainWindow):
         y = margin
         self.move(x,y)
 
-    def fetch_data(self):
+    # button click handler
+    def get_data(self):
+        if not self.backend.credentials_present():
+            print("Credentials not present")
+            self.prompt_login()
+        print("Credentials present")
+        self.fetchInformation()
+
+    def fetchInformation(self):
+        self.status_label.setText('')
         self.status_label.setMovie(self.loadingGIF)
         self.loadingGIF.setScaledSize(QSize(40,17))
         self.loadingGIF.start()
         self.status_label.show()
-        QApplication.processEvents()
-
-        if not self.backend.credentials_present():
-            print("Credentials not present")
-            self.prompt_login()
-
-        print("Credentials present")
         self.thread.start()
 
     def updateUIwithprogress(self, data):
         print(data)
         self.findChild(QWidget,data[0]).findChild(QLabel).setText(data[1])
-        QApplication.processEvents()
 
     def updateUIwithData(self, response):
         print(response)
