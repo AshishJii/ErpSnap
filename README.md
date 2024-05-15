@@ -1,8 +1,5 @@
 # ErpSnap2
 
->[!IMPORTANT]
->Known bug: window is not scrolling.
-
 ErpSnap2 is a widget application that provides a one-click interface to view the latest information from the PSIT ERP. It saves time by directly fetching data from APIs, allowing users to quickly access the information they need.
 
 ## Features

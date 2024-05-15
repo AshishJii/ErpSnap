@@ -100,8 +100,8 @@ class Backend:
             
             print(ttlist)
             data = ''
-            for tt in ttlist:
-                data += f'{tt[0]}\t{tt[1]}\n'
+            for i in range(len(ttlist)):
+                data += f'{i+1}. {ttlist[i][1]:<14} {shorten_name(ttlist[i][0])}\n'
             self.thread.progress.emit(['TtTab',data])
 
         # NOTICES---------------------------------------------------------------------------------
@@ -119,11 +119,18 @@ class Backend:
         print(notices)
         data = ''
         for notice in notices:
-            data += f'<li><a href="{notice[1]}">{notice[0]}</a><br></li>'
+            data += f'<li><strong>★</strong><a href="{notice[1]}">{notice[0].capitalize()}</a><br></li>'
+        
         self.thread.progress.emit(['NtcTab',data])
 
         return 'success'
     
+def shorten_name(full_name):
+    match = re.match(r'^(\S+)', full_name)
+    if match:
+        first_word = match.group(1)
+        return first_word + " " + ' '.join(word[0] + '.' for word in full_name.split()[1:])
+    return full_name
 
 def make_request(method,url, **kwargs):
     try: 
@@ -135,7 +142,7 @@ def make_request(method,url, **kwargs):
     except req.ConnectionError:
         return {'status': 'error','msg':'No Internet Connection'}
     except req.Timeout:
-        return {'status': 'error','msg':'Request timed out. Slow internet connection'}
+        return {'status': 'error','msg':'Request timed out.\nSlow internet connection'}
 
 def extract_info(data, pattern):
     match = re.search(pattern, data)

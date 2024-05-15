@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QDialog, QLineEdit, QTabWidget
+from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QDialog, QLineEdit, QTabWidget, QScrollArea
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize
 from PyQt6.QtGui import QGuiApplication, QMovie
 import sys
@@ -57,23 +57,31 @@ class MainWindow(QMainWindow):
 
         # self.setFixedSize(400, 300)
         self.setStyleSheet( """
-                color: rgba(237,174,28,100%);
                 background-color: rgba(0,0,0,100%);
-                text-align: center;
-                border-radius: 150px;
-                border: 1px solid rgba(237,174,28,100%);
-                padding: 5px;
-                """)
+            """)
         
         central_widget = QWidget()
+        central_widget.setObjectName("mainContainer")
+        central_widget.setStyleSheet( """
+            QWidget{
+                color: rgba(237,174,28,100%);
+            }
+            #mainContainer{
+                text-align: center;
+                border: 1px solid rgba(237,174,28,100%);
+                border-radius: 5px;                
+            }      
+            """)
+
+
         layout = QVBoxLayout()
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
-        self.title_label = QLabel("ErpSnap v2.2")
-        self.title_label.setStyleSheet("font-size: 18px;font-weight: bold;")
-        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.title_label)
+        # self.title_label = QLabel("ErpSnap v2.2")
+        # self.title_label.setStyleSheet("font-size: 18px;font-weight: bold;")
+        # self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # layout.addWidget(self.title_label)
         
         self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
         self.status_label.hide()  # Initially hide loading label
@@ -95,11 +103,17 @@ class MainWindow(QMainWindow):
             tab_label.setWordWrap(True)
             tab_label.setOpenExternalLinks(True)
             tab_layout.addWidget(tab_label)
-            self.tabs.addTab(tab,tabNames[tabNum])
+
+            scroll_area = QScrollArea()
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setWidget(tab)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scroll_area.setStyleSheet("border: none")
+            self.tabs.addTab(scroll_area,tabNames[tabNum])
 
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                /*border: none;*/
+                border-bottom: 1px solid rgba(237,174,28,100%);
             }
             QTabBar::tab {
                 background-color: rgba(0,0,0,100%);
