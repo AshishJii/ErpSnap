@@ -55,28 +55,28 @@ class Backend:
     # direct HTTP call from class variables
     def fetch_information(self):
         req.packages.urllib3.disable_warnings()
-        sitehost = '103.120.30.61'
-        base_url = f"https://{sitehost}"
-
-        login_url = f"{base_url}/Erp/Auth"
-        attendance_url = f"{base_url}/Student/MyAttendanceDetail"
-        timetable_url = f"{base_url}/Student/MyTimeTable"
-        notices_url = f"{base_url}/Student"
-
+        session = req.Session()
+        base_url = f"https://103.120.30.61"
         headers = {'host': 'erp.psit.ac.in', 'Cookie': ''}
         login_data = {"username": self.username, "password": self.password}
 
         # LOGIN-----------------------------------------------------------------------------------
-        login_res = make_request('post',login_url, headers=headers, data=login_data)
+        login_url = f"{base_url}/Erp/Auth"
+        login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
         if login_res['status'] == 'error':
-            return f'Error: {login_res["msg"]}'
+            base_url = f"https://erp.psit.ac.in"
+            login_url = f"{base_url}/Erp/Auth"
+            login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
+            if login_res['status'] == 'error':
+                return f'Error: {login_res["msg"]}'
         
         session_id = login_res['data'].cookies.get("PHPSESSID")
         headers["Cookie"] = f"PHPSESSID={session_id}"
         print('Login Sucesss')
 
         # ATTENDENCE------------------------------------------------------------------------------
-        attendance_res = make_request('get', attendance_url, headers=headers)
+        attendance_url = f"{base_url}/Student/MyAttendanceDetail"
+        attendance_res = make_request(session, 'get', attendance_url, headers=headers)
         if attendance_res['status'] == 'error':
             return f'Error: {attendance_res["msg"]}'
         
@@ -102,7 +102,8 @@ class Backend:
                                    '''])
         
         # TIMETABLE-------------------------------------------------------------------------------
-        timetable_res = make_request('get', timetable_url, headers=headers)
+        timetable_url = f"{base_url}/Student/MyTimeTable"
+        timetable_res = make_request(session, 'get', timetable_url, headers=headers)
         if timetable_res['status'] == 'error':
             return f'Error: {timetable_res["msg"]}'
 
@@ -125,7 +126,8 @@ class Backend:
             self.thread.progress.emit(['TimeTable',data])
 
         # NOTICES---------------------------------------------------------------------------------
-        notices_res = make_request('get', notices_url, headers=headers)
+        notices_url = f"{base_url}/Student"
+        notices_res = make_request(session, 'get', notices_url, headers=headers)
         if notices_res['status'] == 'error':
             return f'Error: {notices_res["msg"]}'
         
@@ -152,9 +154,9 @@ def shorten_name(full_name):
         return first_word + " " + ' '.join(word[0] + '.' for word in full_name.split()[1:])
     return full_name
 
-def make_request(method,url, **kwargs):
+def make_request(session, method,url, **kwargs):
     try: 
-        res = req.request(method, url, verify=False, timeout=5, **kwargs)
+        res = session.request(method, url, verify=False, timeout=50, **kwargs)
         if res.status_code == 200:
             return {'status': 'success','data':res}
         else:
