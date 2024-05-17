@@ -87,9 +87,9 @@ class Backend:
         # self.thread.progress.emit(['AttenTab',f'{total_lecture}\n{total_absent}\n{attendance_percentage}'])
         # TODO: Move this to frontend
         BASE_DIR = getattr(sys, '_MEIPASS', os.getcwd())
-        percentIcon = os.path.join(BASE_DIR, 'percentage.png')
-        presentIcon = os.path.join(BASE_DIR, 'present.png')
-        absentIcon = os.path.join(BASE_DIR, 'absent.png')
+        percentIcon = os.path.join(BASE_DIR, 'assets/percentage.png')
+        presentIcon = os.path.join(BASE_DIR, 'assets/present.png')
+        absentIcon = os.path.join(BASE_DIR, 'assets/absent.png')
 
         self.thread.progress.emit(['Attendance',f'''
                                    <center>
