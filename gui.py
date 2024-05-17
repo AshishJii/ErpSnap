@@ -1,4 +1,5 @@
-from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QDialog, QLineEdit, QTabWidget, QScrollArea
+from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QDialog, QLineEdit, QTabWidget, QScrollArea, QHBoxLayout, QMessageBox
+
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize
 from PyQt6.QtGui import QGuiApplication, QMovie
 import sys
@@ -73,7 +74,6 @@ class MainWindow(QMainWindow):
             }      
             """)
 
-
         layout = QVBoxLayout()
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
@@ -82,7 +82,23 @@ class MainWindow(QMainWindow):
         # self.title_label.setStyleSheet("font-size: 18px;font-weight: bold;")
         # self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # layout.addWidget(self.title_label)
+
+        refresh_button = QPushButton("⟳")
+        refresh_button.setStyleSheet("color: black;background-color: rgba(237,174,28,100%);border:none;font-size: 13px;padding-bottom:3px;")
+        refresh_button.clicked.connect(self.get_data)
+        refresh_button.setFixedSize(13, 13)
+
+        info_button = QPushButton("🛈")
+        info_button.clicked.connect(self.show_info_dialog)
+        info_button.setFixedSize(13,13)
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)
+        button_layout.addWidget(info_button)
+        button_layout.addWidget(refresh_button)
         
+        layout.addLayout(button_layout)   
+
         self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
         self.status_label.hide()  # Initially hide loading label
         layout.addWidget(self.status_label)      
@@ -91,8 +107,7 @@ class MainWindow(QMainWindow):
         self.tabs.setTabPosition(QTabWidget.TabPosition.South)
         layout.addWidget(self.tabs)
         tabsStyles = "border: none;padding: 0;"
-
-        tabNames = ['AttenTab','TtTab','NtcTab']
+        tabNames = ['Attendance','TimeTable','Notices']
         for tabNum in range(3):
             tab = QWidget()
             tab.setObjectName(tabNames[tabNum])
@@ -118,6 +133,10 @@ class MainWindow(QMainWindow):
             QTabBar::tab {
                 background-color: rgba(0,0,0,100%);
                 color: rgba(237,174,28,100%);
+                padding: 3px;
+                padding-left: 5px;
+                padding-right: 5px;                
+                
             }
             QTabBar::tab:selected {
                 background-color: rgba(237,174,28,100%);
@@ -127,10 +146,6 @@ class MainWindow(QMainWindow):
                 border: none;
             }*/
             """)
-        
-        self.fetch_button = QPushButton("Refresh")
-        self.fetch_button.clicked.connect(self.get_data)
-        layout.addWidget(self.fetch_button)
 
     #override: called when screen is rendered
     def showEvent(self, event): 
@@ -140,6 +155,21 @@ class MainWindow(QMainWindow):
         x = screen_gmtry.width() - self.width() - margin
         y = margin
         self.move(x,y)
+
+    def show_info_dialog(self):
+        dialog = QMessageBox()
+        dialog.setWindowTitle("App Info")
+        dialog.setTextFormat(Qt.TextFormat.RichText)
+        dialog.setText(
+            "<div style='text-align:center;margin: 0 auto'>"
+            "<b>App Name:</b> ErpSnap<br>"
+            "<b>Version:</b> 2.4<br>"
+            "<b>Developer: <a href='https://www.github.com/AshishJii'>Ashish Verma</a><br>"
+            "</div>"
+        )
+        dialog.setStandardButtons(QMessageBox.StandardButton.Ok)
+        dialog.setWindowFlags(Qt.WindowType.SplashScreen)
+        dialog.exec()
 
     # button click handler
     def get_data(self):
@@ -203,6 +233,41 @@ class LoginDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.SplashScreen)
 
         layout = QVBoxLayout()
+        self.setObjectName("dialog")
+        self.setStyleSheet("""
+            QDialog {
+                background-color: black;
+                border: 1px solid rgba(237, 174, 28, 100%);
+                border-radius: 10px;
+                padding: 8px;
+            }
+            QLabel {
+                color: rgba(237, 174, 28, 100%);
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QLineEdit {
+                background-color: #1E1E1E;
+                border: 1px solid rgba(237, 174, 28, 100%);
+                border-radius: 5px;
+                color: rgba(237, 174, 28, 100%);
+                padding: 5px;
+                margin-bottom: 10px;
+            }
+            QPushButton {
+                background-color: rgba(237, 174, 28, 100%);
+                color: #2E2E2E;
+                font-size: 13px;
+                font-weight: bold;
+                border: none;
+                border-radius: 5px;
+                padding: 7px;
+            }
+            QPushButton:hover {
+                background-color: rgba(237, 174, 28, 80%);
+            }
+        """)
+        
 
         self.username_label = QLabel("Username:")
         self.username_input = QLineEdit()
@@ -218,6 +283,22 @@ class LoginDialog(QDialog):
         self.submit_button = QPushButton("Submit")
         self.submit_button.clicked.connect(self.accept)
         layout.addWidget(self.submit_button)
+
+
+        # self.setStyleSheet("""
+        #     QLabel {
+        #         color: rgba(237, 174, 28, 100%);
+        #         text-align: center;
+        #     }
+        #     QPushButton {
+        #         color: rgba(237, 174, 28, 100%);
+        #         border-bottom: rgba(237, 174, 28, 100%);
+        #     }
+        #     #dialog {
+        #         border: 1px solid rgba(237, 174, 28, 100%);
+        #         border-radius: 5px;                
+        #     }
+        #     """)
 
         self.setLayout(layout)
 
