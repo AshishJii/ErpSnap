@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
 
         # loading gif setup
         BASE_DIR = getattr(sys, '_MEIPASS', os.getcwd())
-        loadingIcon = os.path.join(BASE_DIR, 'loading.gif')
+        loadingIcon = os.path.join(BASE_DIR, 'assets/loading.gif')
         self.loadingGIF = QMovie(loadingIcon)
 
         self.setupUI()
