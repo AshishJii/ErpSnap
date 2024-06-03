@@ -82,7 +82,7 @@ class Backend:
         
         data = attendance_res['data'].text
         total_lecture = extract_info(data, "Total Lecture : ([0-9]*)")
-        total_absent = extract_info(data, "Total Absent : ([0-9]*)")
+        total_absent = extract_info(data, "Total Absent \+ OAA: ([0-9]*)")
         attendance_percentage = extract_info(data, "Attendance Percentage : ([0-9.]*)\s%")
         # self.thread.progress.emit(['AttenTab',f'{total_lecture}\n{total_absent}\n{attendance_percentage}'])
         # TODO: Move this to frontend

@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
         dialog.setText(
             "<div style='text-align:center;margin: 0 auto'>"
             "<b>App Name:</b> ErpSnap<br>"
-            "<b>Version:</b> 2.4<br>"
+            "<b>Version:</b> 2.4.1<br>"
             "<b>Developer: <a href='https://www.github.com/AshishJii'>Ashish Verma</a><br>"
             "</div>"
         )
