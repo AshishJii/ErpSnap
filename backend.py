@@ -7,7 +7,7 @@ import re
 class Backend:
     def __init__(self, login_callback=None):
         
-        app_directory = os.path.join(os.getenv('APPDATA'), 'ErpSnap2')
+        app_directory = os.path.join(os.getenv('APPDATA'), 'ErpSnap')
         if not os.path.exists(app_directory):
             os.makedirs(app_directory)
 
@@ -156,7 +156,7 @@ def shorten_name(full_name):
 
 def make_request(session, method,url, **kwargs):
     try: 
-        res = session.request(method, url, verify=False, timeout=50, **kwargs)
+        res = session.request(method, url, verify=False, timeout=5, **kwargs)
         if res.status_code == 200:
             return {'status': 'success','data':res}
         else:

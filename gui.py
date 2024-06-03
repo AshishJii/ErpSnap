@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QDialog, QLineEdit, QTabWidget, QScrollArea, QHBoxLayout, QMessageBox
 
-from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize
+from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize, QCoreApplication
 from PyQt6.QtGui import QGuiApplication, QMovie
 import sys
 import os
@@ -86,11 +86,11 @@ class MainWindow(QMainWindow):
         refresh_button = QPushButton("⟳")
         refresh_button.setStyleSheet("color: black;background-color: rgba(237,174,28,100%);border:none;font-size: 13px;padding-bottom:3px;")
         refresh_button.clicked.connect(self.get_data)
-        refresh_button.setFixedSize(13, 13)
+        refresh_button.setFixedSize(14, 14)
 
         info_button = QPushButton("🛈")
         info_button.clicked.connect(self.show_info_dialog)
-        info_button.setFixedSize(13,13)
+        info_button.setFixedSize(14,14)
 
         button_layout = QHBoxLayout()
         button_layout.addStretch(1)
@@ -167,10 +167,19 @@ class MainWindow(QMainWindow):
             "<b>Developer: <a href='https://www.github.com/AshishJii'>Ashish Verma</a><br>"
             "</div>"
         )
+
+        close_button = dialog.addButton("Exit Application",QMessageBox.ButtonRole.RejectRole)
+        close_button.setStyleSheet("padding: 5px;")
+        close_button.clicked.connect(self.close_application)
+
         dialog.setStandardButtons(QMessageBox.StandardButton.Ok)
         dialog.setWindowFlags(Qt.WindowType.SplashScreen)
         dialog.exec()
 
+    def close_application(self):
+        self.thread.exit()
+        self.close()
+        QCoreApplication.quit()
     # button click handler
     def get_data(self):
         if not self.backend.credentials_present():
