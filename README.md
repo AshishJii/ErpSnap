@@ -1,5 +1,7 @@
 # ErpSnap
 
+![](assets/showcase.gif)
+
 A widget application that provides a one-click interface to view the latest info from PSIT ERP. It saves time by directly fetching data from APIs, allowing users to quickly access the information they need.
 
 ## Installation FAQ
