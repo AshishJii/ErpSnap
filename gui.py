@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QDialog, QLineEdit, QTabWidget, QScrollArea, QHBoxLayout, QMessageBox
 
-from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize, QCoreApplication
+from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QThread, QObject, QSize, QCoreApplication, QTimer
 from PyQt6.QtGui import QGuiApplication, QMovie
 import sys
 import os
@@ -43,8 +43,8 @@ class MainWindow(QMainWindow):
         self.setupUI()
         self.setupWorkerThread()
 
-        # on startup launch
-        # self.checkAndRun(self.fetchInformation)
+        # on startup launch; delay input by 800ms
+        QTimer.singleShot(800, lambda: self.checkAndRun(self.fetchInformation))
 
     def setupWorkerThread(self):
         self.thread = QThread()
@@ -193,7 +193,7 @@ class MainWindow(QMainWindow):
         dialog.setText(
             "<div style='text-align:center;margin: 0 auto'>"
             "<b>App Name:</b> ErpSnap<br>"
-            "<b>Version:</b> 2.5.0<br>"
+            "<b>Version:</b> 2.5.1<br>"
             "<b>Developer: <a href='https://www.github.com/AshishJii'>Ashish Verma</a><br>"
             "</div>"
         )
@@ -352,6 +352,15 @@ class LoginDialog(QDialog):
         #     """)
 
         self.setLayout(layout)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self.parent():
+            parent_geom = self.parent().geometry()
+            new_x = parent_geom.x() - 3*parent_geom.width() // 4  # Move right
+            new_y = parent_geom.y() + 3*parent_geom.height() // 4  # Move down
+            self.move(new_x, new_y)
+
 
     def get_credentials(self):
         return self.username_input.text().strip(), self.password_input.text().strip()
