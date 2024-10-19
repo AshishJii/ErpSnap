@@ -3,6 +3,11 @@ import os
 import requests as req
 from bs4 import BeautifulSoup
 import re
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+
+# TODO: Repetitive code in go_to_account and fetch_information. Merge it
 
 class Backend:
     def __init__(self, login_callback=None):
@@ -40,18 +45,53 @@ class Backend:
         return True
 
     # reads credentials from file, then fetches
-    def get_data(self):
+    def read_cred_then_execute(self, task):
         print("Button clicked!")
+        print(task)
         print(self.thread)
 
         try:
             self.read_credentials()
-            res = self.fetch_information()
-            return res
+            return task()
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
     
+
+    def go_to_account(self):
+        req.packages.urllib3.disable_warnings()
+        session = req.Session()
+        base_url = f"https://103.120.30.61"
+        headers = {'host': 'erp.psit.ac.in', 'Cookie': ''}
+        login_data = {"username": self.username, "password": self.password}
+
+        # LOGIN-----------------------------------------------------------------------------------
+        login_url = f"{base_url}/Erp/Auth"
+        login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
+        if login_res['status'] == 'error':
+            base_url = f"https://erp.psit.ac.in"
+            login_url = f"{base_url}/Erp/Auth"
+            login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
+            if login_res['status'] == 'error':
+                return f'Error: {login_res["msg"]}'
+        
+        session_id = login_res['data'].cookies.get("PHPSESSID")
+        headers["Cookie"] = f"PHPSESSID={session_id}"
+        print('Login Sucesss')
+        print(headers)
+        
+        # GOTO ACCOUNT----------------------------------------------------------------------------
+        chrome_options = Options()
+        chrome_options.add_argument("--start-maximized")
+        chrome_options.add_experimental_option("detach", True)
+        browser = webdriver.Chrome(service=Service(), options=chrome_options)
+
+        browser.get('https://erp.psit.ac.in')
+        browser.add_cookie({ 'name': 'PHPSESSID', 'value': session_id, 'domain': 'erp.psit.ac.in' })
+        browser.get('https://erp.psit.ac.in/Student/Dashboard')
+
+        return 'success'
+
     # direct HTTP call from class variables
     def fetch_information(self):
         req.packages.urllib3.disable_warnings()
@@ -156,7 +196,7 @@ def shorten_name(full_name):
 
 def make_request(session, method,url, **kwargs):
     try: 
-        res = session.request(method, url, verify=False, timeout=5, **kwargs)
+        res = session.request(method, url, verify=False, timeout=8, **kwargs)
         if res.status_code == 200:
             return {'status': 'success','data':res}
         else:

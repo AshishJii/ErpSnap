@@ -47,6 +47,7 @@ If you've entered your username and/or details incorrectly, you can reset them b
 | Add option to exit | ✔️ |
 | Show last synced time |  |
 | Auto-sync data on startup if info exists | ✔️ |
+| Open dashboard from app directly | ✔️ |
 | Check if login info is incorrect |  |
 | Add option to re-enter info |  |
 

@@ -7,6 +7,7 @@ import os
 
 from backend import Backend
 
+# TODO: Remove repetitve loading gif code handling
 class Worker(QObject):
     finished = pyqtSignal(str)
     progress = pyqtSignal(list)
@@ -14,11 +15,15 @@ class Worker(QObject):
     def __init__(self, backend):
         super().__init__()
         self.backend = backend
+        self.task = None
 
     def run(self):
-        print(self)
+        print(self, self.task)
         self.backend.thread = self
-        status = self.backend.get_data()
+        if self.task == "fetch_data":
+            status = self.backend.read_cred_then_execute(self.backend.fetch_information)
+        elif self.task == "go_to_account":
+            status = self.backend.read_cred_then_execute(self.backend.go_to_account)
         self.finished.emit(status)
 
 class MainWindow(QMainWindow):
@@ -39,8 +44,7 @@ class MainWindow(QMainWindow):
         self.setupWorkerThread()
 
         # on startup launch
-        if self.backend.credentials_present():
-            self.fetchInformation()
+        # self.checkAndRun(self.fetchInformation)
 
     def setupWorkerThread(self):
         self.thread = QThread()
@@ -85,7 +89,7 @@ class MainWindow(QMainWindow):
 
         refresh_button = QPushButton("⟳")
         refresh_button.setStyleSheet("color: black;background-color: rgba(237,174,28,100%);border:none;font-size: 13px;padding-bottom:3px;")
-        refresh_button.clicked.connect(self.get_data)
+        refresh_button.clicked.connect(lambda: self.checkAndRun(self.fetchInformation))
         refresh_button.setFixedSize(14, 14)
 
         info_button = QPushButton("🛈")
@@ -146,6 +150,32 @@ class MainWindow(QMainWindow):
                 border: none;
             }*/
             """)
+        
+        go_to_account_button = QPushButton("Visit Dashboard")
+        go_to_account_button.setFixedSize(105, 20)
+        go_to_account_button.clicked.connect(lambda: self.checkAndRun(self.viewAccount))
+        go_to_account_button.setStyleSheet("""
+        QPushButton {
+            background-color: rgba(237, 174, 28, 100%);
+            color: #2E2E2E;
+            font-size: 12px;
+            font-weight: bold;         
+            border: none;
+            border-radius: 5px;
+            padding: 1px;
+        }
+        QPushButton:hover {
+            background-color: rgba(237, 174, 28, 80%);
+            color: #333333;
+        }
+        """)
+        
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)
+        button_layout.addWidget(go_to_account_button)
+        button_layout.addStretch(1)
+
+        layout.addLayout(button_layout)
 
     #override: called when screen is rendered
     def showEvent(self, event): 
@@ -163,7 +193,7 @@ class MainWindow(QMainWindow):
         dialog.setText(
             "<div style='text-align:center;margin: 0 auto'>"
             "<b>App Name:</b> ErpSnap<br>"
-            "<b>Version:</b> 2.4.1<br>"
+            "<b>Version:</b> 2.5.0<br>"
             "<b>Developer: <a href='https://www.github.com/AshishJii'>Ashish Verma</a><br>"
             "</div>"
         )
@@ -180,13 +210,14 @@ class MainWindow(QMainWindow):
         self.thread.exit()
         self.close()
         QCoreApplication.quit()
+
     # button click handler
-    def get_data(self):
+    def checkAndRun(self, callback):
         if not self.backend.credentials_present():
             print("Credentials not present")
             self.prompt_login()
         print("Credentials present")
-        self.fetchInformation()
+        callback()
 
     def fetchInformation(self):
         self.status_label.setText('')
@@ -194,6 +225,17 @@ class MainWindow(QMainWindow):
         self.loadingGIF.setScaledSize(QSize(40,17))
         self.loadingGIF.start()
         self.status_label.show()
+        
+        self.worker.task = "fetch_data"
+        self.thread.start()
+
+    def viewAccount(self):
+        self.status_label.setMovie(self.loadingGIF)
+        self.loadingGIF.setScaledSize(QSize(40,17))
+        self.loadingGIF.start()
+        self.status_label.show()
+        
+        self.worker.task = "go_to_account"
         self.thread.start()
 
     def updateUIwithprogress(self, data):
