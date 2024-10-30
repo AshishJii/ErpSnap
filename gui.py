@@ -88,11 +88,25 @@ class MainWindow(QMainWindow):
         # layout.addWidget(self.title_label)
 
         refresh_button = QPushButton("⟳")
-        refresh_button.setStyleSheet("color: black;background-color: rgba(237,174,28,100%);border:none;font-size: 13px;padding-bottom:3px;")
+        refresh_button.setStyleSheet("""
+            QPushButton {
+                color: black;background-color: rgba(237,174,28,100%);border:none;font-size: 13px;padding-bottom:3px;
+            }
+            QPushButton:hover {
+                background-color: rgba(237, 174, 28, 80%);
+                color: #333333;
+            }
+        """)
         refresh_button.clicked.connect(lambda: self.checkAndRun(self.fetchInformation))
         refresh_button.setFixedSize(14, 14)
 
         info_button = QPushButton("🛈")
+        info_button.setStyleSheet("""
+            QPushButton:hover {
+                background-color: rgba(100, 100, 100, 80%);
+            }
+        """)
+        
         info_button.clicked.connect(self.show_info_dialog)
         info_button.setFixedSize(14,14)
 
