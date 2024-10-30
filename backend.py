@@ -24,6 +24,7 @@ class Backend:
         self.login_callback = login_callback
 
         self.thread = None #thread from where it is called
+        req.packages.urllib3.disable_warnings()
     
     def read_credentials(self):
         if os.path.exists(self.credentials_file):
@@ -58,27 +59,28 @@ class Backend:
             return None
     
 
-    def go_to_account(self):
-        req.packages.urllib3.disable_warnings()
+    def login(self):
         session = req.Session()
-        base_url = f"https://103.120.30.61"
+        base_urls = [f"https://103.120.30.61", f"https://erp.psit.ac.in"]
         headers = {'host': 'erp.psit.ac.in', 'Cookie': ''}
         login_data = {"username": self.username, "password": self.password}
-
-        # LOGIN-----------------------------------------------------------------------------------
-        login_url = f"{base_url}/Erp/Auth"
-        login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
-        if login_res['status'] == 'error':
-            base_url = f"https://erp.psit.ac.in"
+        login_res = None
+        for base_url in base_urls:
             login_url = f"{base_url}/Erp/Auth"
-            login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
-            if login_res['status'] == 'error':
-                return f'Error: {login_res["msg"]}'
-        
-        session_id = login_res['data'].cookies.get("PHPSESSID")
-        headers["Cookie"] = f"PHPSESSID={session_id}"
-        print('Login Sucesss')
-        print(headers)
+            login_res = make_request(session, 'post', login_url, headers=headers, data=login_data)
+
+            if login_res['status'] == 'success':
+                session_id = login_res['data'].cookies.get("PHPSESSID")
+                headers["Cookie"] = f"PHPSESSID={session_id}"
+                print('Login Success')
+                return 'Success', session, session_id, headers, base_url
+
+        return f'Error: {login_res["msg"]}', session, None, None, None
+
+    def go_to_account(self):
+        msg, session, session_id, headers, base_url = self.login()
+        if session_id == None:
+            return msg
         
         # GOTO ACCOUNT----------------------------------------------------------------------------
         chrome_options = Options()
@@ -94,25 +96,9 @@ class Backend:
 
     # direct HTTP call from class variables
     def fetch_information(self):
-        req.packages.urllib3.disable_warnings()
-        session = req.Session()
-        base_url = f"https://103.120.30.61"
-        headers = {'host': 'erp.psit.ac.in', 'Cookie': ''}
-        login_data = {"username": self.username, "password": self.password}
-
-        # LOGIN-----------------------------------------------------------------------------------
-        login_url = f"{base_url}/Erp/Auth"
-        login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
-        if login_res['status'] == 'error':
-            base_url = f"https://erp.psit.ac.in"
-            login_url = f"{base_url}/Erp/Auth"
-            login_res = make_request(session, 'post',login_url, headers=headers, data=login_data)
-            if login_res['status'] == 'error':
-                return f'Error: {login_res["msg"]}'
-        
-        session_id = login_res['data'].cookies.get("PHPSESSID")
-        headers["Cookie"] = f"PHPSESSID={session_id}"
-        print('Login Sucesss')
+        msg, session, session_id, headers, base_url = self.login()
+        if session_id == None:
+            return msg
 
         # ATTENDENCE------------------------------------------------------------------------------
         attendance_url = f"{base_url}/Student/MyAttendanceDetail"
@@ -196,7 +182,7 @@ def shorten_name(full_name):
 
 def make_request(session, method,url, **kwargs):
     try: 
-        res = session.request(method, url, verify=False, timeout=8, **kwargs)
+        res = session.request(method, url, verify=False, timeout=20, **kwargs)
         if res.status_code == 200:
             return {'status': 'success','data':res}
         else:
