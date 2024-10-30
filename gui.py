@@ -160,6 +160,10 @@ class MainWindow(QMainWindow):
                 background-color: rgba(237,174,28,100%);
                 color: rgba(0,0,0,100%);
             }
+            QTabBar::tab:hover {
+                background-color: rgba(100,100,100, 40%);
+                color: rgba(237,174,28,100%);
+            }                   
             /*QTabWidget::pane > QWidget {
                 border: none;
             }*/
